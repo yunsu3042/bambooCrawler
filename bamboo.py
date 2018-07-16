@@ -82,6 +82,4 @@ def search():
     crawler(pageNum, driver, dirpath)
     driver.close()
 
-    
-    
-
+search()
