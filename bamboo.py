@@ -3,17 +3,18 @@ import time
 import bs4
 import os
 from selenium import webdriver
-
-def writePage(driver, dirpath):
+def writePage(driver, dirpath, keyword):
     headers = driver.find_elements_by_css_selector("small.text-muted.ng-binding")
     articles = driver.find_elements_by_css_selector("p.feedContent.ng-binding")
     assert len(headers) == len(articles)
     for i in range(len(articles)):
         header = headers[i]
         article = articles[i]
-        writeFile(toSearch=toSearch, header=header, article=article, dirpath=dirpath)
+        writeFile(toSearch=keyword, header=header, article=article, dirpath=dirpath)
         
 def writeFile(toSearch, header, article, dirpath):
+    if toSearch == "":
+        toSearch = "¿ ¿¿¿"
     path = dirpath + "/" + toSearch
     if os.path.exists(path):
         pass
@@ -26,6 +27,31 @@ def writeFile(toSearch, header, article, dirpath):
     file.write(column)
     file.close()
     
+def getPage(n):
+    time.sleep(1)
+    navi = driver.find_elements_by_xpath("//ul[@class='pagination pagination-sm']/li/a")
+    if(n > 5):
+        fastNextBtn = navi[len(navi) - 1]
+        fastNextBtn.click()
+        time.sleep(3)
+        n = n - 5
+        getPage(n)
+    else:
+        activeObj = driver.find_element_by_css_selector(".ng-scope.active")
+        activePage = activeObj.find_element_by_css_selector(".ng-binding.ng-scope").text
+        targetPage = int(activePage) + n - 1
+        for idx in range(len(navi)):
+            if(len(navi) == 7 and (idx == 0 or idx == 6)):
+                continue
+            if(len(navi) == 6 and (idx == 5)):
+                continue
+            page = navi[idx].find_element_by_css_selector(".ng-binding.ng-scope").text
+            if int(page) == targetPage:
+                targetPageBtn = navi[idx]
+                targetPageBtn.click()
+                break
+
+    
 def getNextPage(driver):
     activeObj = driver.find_element_by_css_selector(".ng-scope.active")
     curPage = activeObj.find_element_by_css_selector(".ng-binding.ng-scope").text
@@ -33,6 +59,8 @@ def getNextPage(driver):
     navi = driver.find_elements_by_xpath("//ul[@class='pagination pagination-sm']/li/a")
     if curPage % 5 == 0:
         nextBtn = navi[len(navi) - 1]
+        nextBtn.click()
+        return True
     for idx in range(len(navi)):
         if(len(navi) == 7 and (idx == 0 or idx == 6)):
             continue
@@ -41,7 +69,9 @@ def getNextPage(driver):
         page = navi[idx].find_element_by_css_selector(".ng-binding.ng-scope").text
         if int(page) == curPage + 1:
             nextBtn = navi[idx]
-    nextBtn.click()
+            nextBtn.click()
+            return True
+    return False
 
 def getDriver(webLoc, chromeLoc):
     driver = webdriver.Chrome(chromeLoc)
@@ -49,28 +79,37 @@ def getDriver(webLoc, chromeLoc):
     driver.get(webLoc)
     return driver
 
-def crawler(n, driver, dirpath):
+def crawler(n, driver, dirpath, keyword):
     for i in range(n - 1):
-        getNextPage(driver)
-        time.sleep(3)
-        writePage(driver, dirpath)
-        driver.implicitly_wait(3)
+        if(getNextPage(driver)):
+            time.sleep(5)
+            writePage(driver, dirpath, keyword)
+            driver.implicitly_wait(5)
+        else:
+            print("¿¿ ¿¿ ¿¿ ¿¿¿ ¿¿¿¿.")
+            break
         
 def search():
-    print("Å©·Ñ·¯¸¦ »ç¿ëÇÏ±â À§ÇØ¼­´Â Å©·Ò µå¶óÀÌ¹ö¶ó´Â Å©·Ñ¸µÀ» µµ¿ÍÁÖ´Â ÇÁ·Î±×·¥ÀÌ ÇÊ¿äÇÕ´Ï´Ù. \n https://sites.google.com/a/chromium.org/chromedriver/downloads ¿¡ Á¢¼ÓÇØ ¿î¿µÃ¼Á¦¿¡ ¸Â´Â Å©·Ò µå¶óÀÌ¹ö¸¦ ´Ù¿î¹Þ°í ´Ù½Ã ½ÇÇàÇØÁÖ¼¼¿ä\n ±×¸®°í Å©·Ò µå¶óÀÌ¹öÀÇ ÁÖ¼Ò¸¦ ±â¾ïÇØµÎ¼¼¿ä.")
-    webLoc = input("°Ë»öÇÒ ÆäÀÌ½ººÏ ´ë³ª¹«½£ ÁÖ¼Ò¸¦ ÀÔ·ÂÇØÁÖ¼¼¿ä. ºóÄ­ ÀÔ·Â½Ã¿¡´Â ¼­¿ï´ëÇÐ±³ ´ë³ª¹«½£À¸·Î Á¢¼ÓÇÕ´Ï´Ù.\n ")
+    print("¿¿¿¿ ¿¿¿¿ ¿¿¿¿ ¿¿ ¿¿¿¿¿¿ ¿¿¿¿ ¿¿¿¿ ¿¿¿¿¿ ¿¿¿¿¿. \n https://sites.google.com/a/chromium.org/chromedriver/downloads ¿ ¿¿¿ ¿¿¿¿¿ ¿¿ ¿¿ ¿¿¿¿¿ ¿¿¿¿ ¿¿ ¿¿¿¿¿¿\n ¿¿¿ ¿¿ ¿¿¿¿¿ ¿¿¿ ¿¿¿¿¿¿.")
+    webLoc = input("¿¿¿ ¿¿¿¿ ¿¿¿¿ ¿¿¿ ¿¿¿¿¿¿. ¿¿ ¿¿¿¿¿ ¿¿¿¿¿ ¿¿¿¿¿¿ ¿¿¿¿¿.\n ")
     if webLoc == "":
         webLoc = "http://snu.fbpage.kr/#/search"
-    keyword = input("°Ë»ö¾î¸¦ ÀÔ·ÂÇØÁÖ¼¼¿ä\n")
-    pageNum = int(input("Å©·Ñ¸µÇÒ ÆäÀÌÁö ¼ö¸¦ ÀÔ·ÂÇØÁÖ¼¼¿ä\n"))
-    dirpath = input("Å°¿öµå " + keyword  + " Æú´õ°¡ ÀúÀåµÉ Àý´ë°æ·Î¸¦ ÀÔ·ÂÇØÁÖ¼¼¿ä ºóÄ­ ÀÔ·Â½Ã¿¡´Â ¹ÙÅÁÈ­¸é¿¡ ÀúÀåµË´Ï´Ù\n ")
-    if(dirpath == "À±¼ö"):
-        dirpath = "/Users/yunsu/Google µå¶óÀÌºê/2018-summer/±Û¾²±âÀÇ ±âÃÊ/ÆÀÇÁ·ÎÁ§Æ®/´ë³ª¹«½£"
+    keyword = input("¿¿¿¿ ¿¿¿¿¿¿\n")
+#     startPage = input("¿¿¿¿ ¿¿¿ ¿¿¿ ¿¿¿ ¿¿¿¿¿¿")
+#     if startPage == "":
+#         startPage = 0
+#     else:
+#         startPage = int(startPage)
+    pageNum = int(input("¿¿¿¿ ¿¿¿ ¿¿ ¿¿¿¿¿¿\n"))
+    dirpath = input("¿¿¿ '" + keyword  + "' ¿¿¿ ¿¿¿ ¿¿¿¿¿ ¿¿¿¿¿¿ ¿¿ ¿¿¿¿¿ ¿¿¿¿¿ ¿¿¿¿¿\n ")
+    if(dirpath == "¿¿"):
+        dirpath = "/Users/yunsu/Google ¿¿¿¿/2018-summer/¿¿¿¿ ¿¿/¿¿¿¿¿/¿¿¿¿"
     elif dirpath == "":
         dirpath = os.path.expanduser("~/Desktop")
-    chromeLoc = input("Å©·Ò µå¶óÀÌ¹öÀÇ À§Ä¡¸¦ Àý´ë°æ·Î·Î ÀÔ·ÂÇØÁÖ¼¼¿ä. °æ·ÎÀÇ ¸¶Áö¸·Àº chromedriver·Î ³¡³ª¾ß ÇÕ´Ï´Ù.\n")
+    chromeLoc = input("¿¿ ¿¿¿¿¿ ¿¿¿ ¿¿¿¿¿ ¿¿¿¿¿¿. ¿¿¿ ¿¿¿¿ chromedriver¿ ¿¿¿ ¿¿¿.\n")
     if chromeLoc == "":
         chromeLoc = '/Users/yunsu/Downloads/chromedriver'
+
     driver = getDriver(webLoc, chromeLoc)
     lookup = driver.find_element_by_css_selector("input.form-control")
     lookup.clear()
@@ -78,8 +117,13 @@ def search():
     search = driver.find_element_by_css_selector(".btn.btn-sm.btn-success")
     search.click()
     driver.implicitly_wait(5)
-    writePage(driver, dirpath)
-    crawler(pageNum, driver, dirpath)
-    driver.close()
+#     getPage(startPage)
+    writePage(driver, dirpath, keyword)
+    crawler(pageNum, driver, dirpath, keyword)
+    driver.close()    
 
+
+    
 search()
+    
+    
